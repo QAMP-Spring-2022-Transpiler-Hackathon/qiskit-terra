@@ -230,6 +230,52 @@ class DAGDependency:
         node.node_id = node_id
         return node_id
 
+    def get_levelled_nodes(self):
+        """Returns an ordered list of nodes.
+        The nodes are ordered by the maximum distance
+        from an innode
+
+        Args:
+            None
+
+        Returns:
+            generator(dict) : iterator over all the nodes ordered
+                              by the dependency levels
+        """
+        node_queue = []
+        levels = {}
+
+        # find innodes to start search
+        for node in self.get_nodes():
+            if len(node.predecessors) == 0:
+                node_queue.append(node.node_id)
+                levels[node.node_id] = 0
+        node_set = set(node_queue)
+
+        while len(node_queue) > 0:
+            parent = node_queue.pop(0)
+            node_set.remove(parent)
+            curr_depth = levels[parent]
+
+            for edge in self.get_out_edges(parent):
+                node = edge[1]
+
+                # the node can enter again, visited map is not enough
+                if node not in node_set:
+                    node_queue.append(node)
+                    node_set.add(node)
+
+                if not node in levels:
+                    levels[node] = curr_depth + 1
+                levels[node] = max(levels[node], curr_depth + 1)
+
+        # sort by dependency level and keep insertion order constant
+        ordered_nodes = [
+            self.get_node(node_id)
+            for node_id, _ in sorted(levels.items(), key=lambda x: (x[1], x[0]))
+        ]
+        return iter(ordered_nodes)
+
     def get_nodes(self):
         """
         Returns:
@@ -612,7 +658,7 @@ def _does_commute(node1, node2):
     qarg1 = [qarg.index(q) for q in node1.qargs]
     qarg2 = [qarg.index(q) for q in node2.qargs]
 
-    dim = 2**qbit_num
+    dim = 2 ** qbit_num
     id_op = np.reshape(np.eye(dim), (2, 2) * qbit_num)
 
     op1 = np.reshape(node1.op.to_matrix(), (2, 2) * len(qarg1))
