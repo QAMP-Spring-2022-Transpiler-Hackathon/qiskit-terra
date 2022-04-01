@@ -148,7 +148,7 @@ def dag_drawer(dag, scale=0.7, filename=None, style="color"):
                 return {}
             if style == "color":
                 n = {}
-                n["label"] = str(node.node_id) + ": " + str(node.name) + str(node.qargs)
+                n["label"] = str(node.node_id) + ": " + str(node.name)
                 if node.name == "measure":
                     n["color"] = "blue"
                     n["style"] = "filled"
